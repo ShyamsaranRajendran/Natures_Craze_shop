@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes heroSlide {
+  0% {
+    background-image: url('../src/assets/turmeric_1.jpg');
+  }
+  33% {
+    background-image: url('../src/assets/turmeric_2.webp');
+  }
+  66% {
+    background-image: url('../src/assets/turmeric_3.jpg');
+  }
+  100% {
+    background-image: url('../src/assets/turmeric_4.webp');
+  }
+}
+
+.animate-hero-section {
+  animation: heroSlide 15s ease-in-out infinite;
+}
+
+/* Global Font Family */
+body {
+  font-family: 'Roboto', sans-serif; /* Set Roboto as the default for body */
+}
+
+/* Heading Font Style */
+h1, h2, h3, h4, h5 {
+  font-family: 'Poppins', sans-serif; /* Use Poppins for all headings */
+}
+
+/* Ensure close button has enough contrast and click area */
+.button190 {
+  z-index: 9999; /* Keep it above modal content */
+  cursor: pointer;
+}
+
+/* Example styling for links with hover effects */
+a {
+  font-family: 'Roboto', sans-serif;
+  text-decoration: none;
+  color: #1a202c; /* Dark text color */
+  transition: color 0.3s ease-in-out;
+}
+
+a:hover {
+  color: #e53e3e; /* Change color to red on hover */
+}
+
+.loader {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #4f46e5; /* Indigo color */
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 1.5s linear infinite;
+}
+
+
+
+
+
+
+
