@@ -6,7 +6,7 @@ import Footer from "./Footer";
 import AdminFooter from "./AdminFooter"; // New footer for admin
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import Chatbot from "./Chatbot"; // Import the Chatbot component
 const Layout = ({ isAdmin }) => {
   const pageVariants = {
     initial: { opacity: 0, scale: 0.95 },
@@ -46,6 +46,7 @@ const Layout = ({ isAdmin }) => {
           </motion.div>
         </AnimatePresence>
       </main>
+      <Chatbot/>
       {isAdmin ? <AdminFooter /> : <Footer />}{" "}
       {/* Conditionally render footer */}
     </div>

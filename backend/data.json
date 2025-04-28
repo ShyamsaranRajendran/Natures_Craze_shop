@@ -1,0 +1,63 @@
+[
+    {
+      "_id": "101",
+      "id": "101",
+      "name": "Kasturi Turmeric",
+      "description": "Pure Kasturi turmeric ideal for skincare and medicinal use",
+      "image": "kasturiImg",
+      "type": "Kasturi",
+      "weight": "100g",
+      "price": 130
+    },
+    {
+      "_id": "102",
+      "id": "102",
+      "name": "Turmeric Face Wash",
+      "description": "Gentle turmeric-infused face wash for naturally radiant and clear skin.",
+      "image": "faceImg",
+      "type": "Wild",
+      "weight": "250g",
+      "price": 160
+    },
+    {
+      "_id": "103",
+      "id": "103",
+      "name": "Turmeric Capsules",
+      "description": "Easy-to-consume capsules with 95% curcumin concentration",
+      "image": "capImg",
+      "type": "Capsule",
+      "weight": "60 capsules",
+      "price": 200
+    },
+    {
+      "_id": "104",
+      "id": "104",
+      "name": "Haldi Soap",
+      "description": "Turmeric infused handmade bathing soap",
+      "image": "soapImg",
+      "type": "Bath",
+      "weight": "75g",
+      "price": 55
+    },
+    {
+      "_id": "105",
+      "id": "105",
+      "name": "Turmeric Tea Mix",
+      "description": "Healthy herbal tea blend with turmeric and ginger",
+      "image": "teaImg",
+      "type": "Tea",
+      "weight": "150g",
+      "price": 110
+    },
+    {
+      "_id": "106",
+      "id": "106",
+      "name": "Turmeric Essential Oil",
+      "description": "Aromatic essential oil for skin and wellness",
+      "image": "oilImg",
+      "type": "Oil",
+      "weight": "30ml",
+      "price": 180
+    }
+  ]
+  

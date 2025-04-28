@@ -9,12 +9,12 @@ const orderSchema = new mongoose.Schema(
     },
     username: {
       type: String,
-      required: true,
+      
       trim: true,
     },
     phoneNumber: {
       type: String,
-      required: true,
+      
       trim: true,
     },
     alternatePhoneNumber: {
@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema(
     },
     address: {
       type: String,
-      required: true,
+      
       trim: true,
     },
     items: [
@@ -31,38 +31,38 @@ const orderSchema = new mongoose.Schema(
         productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
-          required: true,
+          
         },
         name: {
           type: String,
-          required: true,
+          
           trim: true,
         },
         price: {
           type: Number,
-          required: true,
+          
           min: 0,
         },
         weight: {
           type: String,
-          required: true,
+          
           trim: true,
         },
         quantity: {
           type: Number,
-          required: true,
+          
           min: 1,
         },
         totalPrice: {
           type: Number,
-          required: true,
+          
           min: 0,
         },
       },
     ],
     totalAmount: {
       type: Number,
-      required: true,
+      
       min: 0,
     },
     status: {

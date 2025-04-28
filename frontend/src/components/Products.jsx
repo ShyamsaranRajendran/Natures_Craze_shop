@@ -97,7 +97,7 @@ const Products = () => {
           }
         ];
 
-        setProducts([...data, ...mockProducts]);
+        setProducts([ ...mockProducts]);
       } catch (err) {
         setError(err.message);
       } finally {

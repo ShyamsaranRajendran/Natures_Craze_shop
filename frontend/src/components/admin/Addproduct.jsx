@@ -1,190 +1,175 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const backendURL = process.env.REACT_APP_BACKEND_URL;
 
-const AddProduct = () => {
-  const [productName, setProductName] = useState("");
-  const [productImage, setProductImage] = useState(null);
-  const [productDescription, setProductDescription] = useState("");
-  const [prices, setPrices] = useState([{ packSize: "", price: "" }]);
-  const [loading, setLoading] = useState(false);
+function AddProduct() {
   const navigate = useNavigate();
+  const [product, setProduct] = useState({
+    name: "",
+    description: "",
+    price: "",
+    type: "",
+    weight: "",
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const isImage = file.type.startsWith("image/");
-      const isValidSize = file.size <= 5 * 1024 * 1024;
-      if (!isImage) {
-        toast.error("Please select a valid image file.");
-        return;
-      }
-      if (!isValidSize) {
-        toast.error("Image size should not exceed 5MB.");
-        return;
-      }
-      setProductImage(file);
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProduct(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handlePriceChange = (index, field, value) => {
-    const updatedPrices = [...prices];
-    updatedPrices[index][field] = value;
-    setPrices(updatedPrices);
-  };
-
-  const addPriceField = () => {
-    setPrices([...prices, { packSize: "", price: "" }]);
-  };
-
-  const removePriceField = (index) => {
-    const updatedPrices = prices.filter((_, i) => i !== index);
-    setPrices(updatedPrices);
+  const handleFileChange = (e) => {
+    setImageFile(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!productName || !productImage || prices.length === 0) {
-      toast.error("All fields are required!");
-      return;
-    }
+    setLoading(true);
 
     const formData = new FormData();
-    formData.append("name", productName);
-    formData.append("description", productDescription);
-    formData.append("prices", JSON.stringify(prices));
-    formData.append("image", productImage);
+    formData.append("name", product.name);
+    formData.append("description", product.description);
+    formData.append("price", product.price);
+    formData.append("type", product.type);
+    formData.append("weight", product.weight);
 
-    setLoading(true);
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
     try {
       const response = await fetch(`${backendURL}/prod/add`, {
         method: "POST",
         body: formData,
       });
 
-      if (response.ok) {
-        toast.success("Product added successfully!");
-        navigate("/admin/products");
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Failed to add product.");
+      if (!response.ok) {
+        throw new Error("Failed to add product");
       }
+
+      toast.success("Product added successfully!");
+      navigate("/products");
     } catch (error) {
-      toast.error("An error occurred. Please try again.");
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 mt-16 lg:mt-20">
-      <ToastContainer />
-      <h2 className="text-xl lg:text-2xl font-bold mb-6 text-center">
-        Add Product
-      </h2>
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-lg w-full mx-auto bg-white p-4 rounded-lg shadow-md"
-      >
-        <div className="mb-4">
-          <label className="block text-sm lg:text-base font-medium mb-2">
-            Product Name
-          </label>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <h1 className="text-2xl font-bold mb-6">Add New Product</h1>
+      
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={product.name}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <textarea
+                name="description"
+                value={product.description}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Type</label>
+              <select
+                name="type"
+                value={product.type}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              >
+                <option value="">Select type</option>
+                <option value="Kasturi">Kasturi</option>
+                <option value="Wild">Wild</option>
+                <option value="Capsule">Capsule</option>
+                <option value="Bath">Bath</option>
+                <option value="Tea">Tea</option>
+                <option value="Oil">Oil</option>
+                <option value="Powder">Powder</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Price (₹)</label>
+              <input
+                type="number"
+                name="price"
+                value={product.price}
+                onChange={handleInputChange}
+                min="0"
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Weight/Size</label>
+              <input
+                type="text"
+                name="weight"
+                value={product.weight}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Image Upload */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium mb-1">Product Image</label>
           <input
-            type="text"
-            className="w-full border rounded-lg px-4 py-2 text-sm lg:text-base"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*"
+            className="w-full px-3 py-2 border rounded-md"
             required
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm lg:text-base font-medium mb-2">
-            Description
-          </label>
-          <textarea
-            className="w-full border rounded-lg px-4 py-2 text-sm lg:text-base"
-            value={productDescription}
-            onChange={(e) => setProductDescription(e.target.value)}
-            rows="4"
-          ></textarea>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm lg:text-base font-medium mb-2">
-            Prices
-          </label>
-          {prices.map((price, index) => (
-            <div
-              key={index}
-              className="flex flex-col lg:flex-row gap-2 lg:gap-4 mb-2"
-            >
-              <input
-                type="text"
-                className="w-full lg:flex-1 border rounded-lg px-4 py-2 text-sm lg:text-base"
-                placeholder="Pack Size (e.g., 500g)"
-                value={price.packSize}
-                onChange={(e) =>
-                  handlePriceChange(index, "packSize", e.target.value)
-                }
-                required
-              />
-              <input
-                type="number"
-                step="0.01"
-                className="w-full lg:flex-1 border rounded-lg px-4 py-2 text-sm lg:text-base"
-                placeholder="Price"
-                value={price.price}
-                onChange={(e) =>
-                  handlePriceChange(index, "price", e.target.value)
-                }
-                required
-              />
-              <button
-                type="button"
-                onClick={() => removePriceField(index)}
-                className="text-red-500 text-sm lg:text-base"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+        {/* Submit Button */}
+        <div className="mt-8">
           <button
-            type="button"
-            onClick={addPriceField}
-            className="text-blue-500 text-sm lg:text-base"
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300"
           >
-            Add Price
+            {loading ? "Adding..." : "Add Product"}
           </button>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm lg:text-base font-medium mb-2">
-            Image
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="w-full border rounded-lg px-4 py-2 text-sm lg:text-base"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-500 text-white py-2 px-4 rounded-lg text-sm lg:text-base ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          {loading ? "Adding Product..." : "Add Product"}
-        </button>
       </form>
     </div>
   );
-};
+}
 
 export default AddProduct;

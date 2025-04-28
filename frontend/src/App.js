@@ -24,14 +24,14 @@ import Privacy from "./components/policy/privacy";
 import Terms from "./components/policy/terms"; 
 import Refund from "./components/policy/refund";
 import Shipping from "./components/policy/shipping";
-import Cart from "./components/cart/cart";
+import Cart from "./components/cartsub";
 import PaymentFail from "./components/paymentFail";
 import PaymentSuccess from "./components/paymentSuccess";
 import Developer from "./components/Developer";
 import Checkout from "./components/checkout";
 import { Provider } from "react-redux";
 import store from "./redux/store";
-
+import Chatbot from "./components/Chatbot";
 const backendURL = process.env.REACT_APP_BACKEND_URL;
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-screen">
@@ -48,23 +48,22 @@ const NotFound = () => (
 
 const fetchUserRole = async () => {
   try {
-    const token = localStorage.getItem("token"); // Retrieve the token from localStorage
+    const token = localStorage.getItem("token");
     if (!token) {
       console.error("No token found in localStorage");
-      return null; // Return null if there's no token
+      return null; 
     }
 
-    // Make the request with the token in the Authorization header
     const response = await axios.get(`${backendURL}/auth/role`, {
       headers: {
-        Authorization: `Bearer ${token}`, // Send the token in the Authorization header
+        Authorization: `Bearer ${token}`,
       },
     });
     console.log(response.data);
-    return response.data; // Return the role from backend response
+    return response.data;
   } catch (error) {
     if (error.response) {
-      // Handle different HTTP status codes (e.g., 401 Unauthorized or 403 Forbidden)
+      
       if (error.response.status === 401) {
         console.error("Unauthorized: Token is missing or invalid");
       } else if (error.response.status === 403) {
@@ -75,13 +74,10 @@ const fetchUserRole = async () => {
     } else {
       console.error("Error fetching user role:", error);
     }
-    return null; // Default to no role if fetching fails
+    return null;
   }
 };
 
-
-
-// PrivateRoute Component for Secure Role-Based Access
 const PrivateRoute = ({ children, allowedRoles }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +85,7 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   useEffect(() => {
     const getRole = async () => {
       const fetchedRole = await fetchUserRole();
-      console.log("Fetched Role:", fetchedRole); // Log the fetched role
+      console.log("Fetched Role:", fetchedRole);
       setRole(fetchedRole);
       setLoading(false);
     };
@@ -159,7 +155,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
-          {/* <Route path="/checkout" element={<Checkout />} /> */}
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/policy/privacy" element={<Privacy />} />
           <Route path="/policy/terms" element={<Terms />} />
           <Route path="/policy/refund" element={<Refund />} />

@@ -144,7 +144,7 @@ router.get("/:id", async (req, res) => {
     const { id } = req.params;
 
     console.log(`Fetching product with ID: ${id}`);
-    const product = await Product.findById(id);
+    const product = await Product.findById({id:id});
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });

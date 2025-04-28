@@ -69,7 +69,7 @@ const Products = () => {
   };
 
   const handleEdit = (product) => {
-    navigate(`/admin/products/edit/${product._id}`);
+    navigate(`/admin/products/edit/${product.id}`);
   };
 
   const handleAddProduct = () => {
