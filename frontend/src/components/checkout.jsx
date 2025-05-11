@@ -86,7 +86,7 @@ const CheckoutPage = () => {
       console.log('Sending to backend:', orderData);
   
       // Create order in backend
-      const response = await axios.post(`${backendURL}/payments/create`, orderData, {
+      const response = await axios.post(`${backendURL}/orders/create`, orderData, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -106,7 +106,7 @@ const CheckoutPage = () => {
         handler: async function(response) {
           try {
             // Verify payment with backend
-            const verification = await axios.post(`${backendURL}/payments/verify`, {
+            const verification = await axios.post(`${backendURL}/orders/verify`, {
               razorpayPaymentId: response.razorpay_payment_id,
               razorpayOrderId: response.razorpay_order_id,
               razorpaySignature: response.razorpay_signature,
@@ -116,7 +116,7 @@ const CheckoutPage = () => {
             if (verification.data.success) {
               toast.success('Payment successful!');
               clearCart();
-              navigate('/order-success', {
+              navigate('/payment/paymentSuccess', {
                 state: {
                   orderId: orderId,
                   paymentId: response.razorpay_payment_id,
@@ -129,7 +129,7 @@ const CheckoutPage = () => {
           } catch (error) {
             console.error('Verification error:', error);
             toast.error('Payment verification failed');
-            navigate('/payment-failed');
+            navigate('/payment/paymentFailed');
           }
         },
         prefill: {
@@ -178,7 +178,7 @@ const CheckoutPage = () => {
         await axios.post(`${backendURL}/orders/create`, orderData);
         toast.success('Order placed successfully!');
         clearCart();
-        navigate('/order-success', {
+        navigate('/paymentSuccess', {
           state: {
             paymentMethod: 'cod',
             amount: cartTotal,

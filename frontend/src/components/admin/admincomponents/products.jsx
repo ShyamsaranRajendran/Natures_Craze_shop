@@ -8,10 +8,10 @@ const ProductsPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const [filters, setFilters] = useState({
     search: "",
-    weight: "",
+    quantity: "",
     minPrice: "",
     maxPrice: "",
   });
@@ -22,7 +22,7 @@ const ProductsPage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(`${backendURL}/prod/all`);
+        const response = await axios.get(`${backendURL}/prod/all/Tableformat`);
         setProducts(response.data);
       } catch (err) {
         setError(err.message);
@@ -38,11 +38,11 @@ const ProductsPage = () => {
       const matchesSearch =
         !filters.search ||
         product.name.toLowerCase().includes(filters.search.toLowerCase());
-      const matchesWeight = !filters.weight || product.weight === filters.weight;
+      const matchesQuantity = !filters.quantity || product.quantity === filters.quantity;
       const matchesPrice =
         (!filters.minPrice || product.price >= parseFloat(filters.minPrice)) &&
         (!filters.maxPrice || product.price <= parseFloat(filters.maxPrice));
-      return matchesSearch && matchesWeight && matchesPrice;
+      return matchesSearch && matchesQuantity && matchesPrice;
     });
   }, [products, filters]);
 
@@ -59,16 +59,14 @@ const ProductsPage = () => {
 
   const handleExportToExcel = useCallback(() => {
     const ws = XLSX.utils.json_to_sheet(
-      filteredProducts.map((product) => {
-        const prices = product.prices
-          .map((priceOption) => `${priceOption.packSize} - ₹${priceOption.price}`)
-          .join(", ");
-        return {
-          "Product ID": product.id,
-          "Product Name": product.name,
-          Prices: prices,
-        };
-      })
+      filteredProducts.map((product) => ({
+        "Product ID": product._id,
+        "Product Name": product.name,
+        "MRP": product.price,
+        "Selling Price": product.sellingPrice,
+        "Quantity": product.quantity,
+        "In Stock": product.inStock ? "Yes" : "No",
+      }))
     );
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Products");
@@ -87,6 +85,27 @@ const ProductsPage = () => {
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             className="border border-gray-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-1/3"
+          />
+          <input
+            type="text"
+            placeholder="Filter by quantity (e.g., 500g)"
+            value={filters.quantity}
+            onChange={(e) => setFilters({ ...filters, quantity: e.target.value })}
+            className="border border-gray-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-1/4"
+          />
+          <input
+            type="number"
+            placeholder="Min Price"
+            value={filters.minPrice}
+            onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+            className="border border-gray-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-1/4"
+          />
+          <input
+            type="number"
+            placeholder="Max Price"
+            value={filters.maxPrice}
+            onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+            className="border border-gray-300 rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-1/4"
           />
         </div>
       </div>
@@ -115,24 +134,25 @@ const ProductsPage = () => {
               <tr>
                 <th className="px-6 py-3 border-b">Product ID</th>
                 <th className="px-6 py-3 border-b">Name</th>
-                <th className="px-6 py-3 border-b">Prices</th>
+                <th className="px-6 py-3 border-b">Quantity</th>
+                <th className="px-6 py-3 border-b">Pricing</th>
                 <th className="px-6 py-3 border-b text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentProducts.length > 0 ? (
-                currentProducts.map((product) => (
+                currentProducts.map((product,index) => (
                   <tr key={product._id} className="hover:bg-gray-100 transition duration-150">
-                    <td className="px-6 py-4 border-b">{product.id}</td>
+                    <td className="px-6 py-4 border-b">{index+1}</td>
                     <td className="px-6 py-4 border-b font-medium">{product.name}</td>
+                    <td className="px-6 py-4 border-b">{product.quantity}</td>
                     <td className="px-6 py-4 border-b w-1/4">
-                      {product.prices.map((priceOption, index) => (
-                        <div key={index} className="mb-1 p-2 bg-gray-50 rounded-lg shadow-sm">
-                          <p>
-                            <strong>Pack:</strong> {priceOption.packSize}, <strong>Price:</strong> ₹{priceOption.price}
-                          </p>
-                        </div>
-                      ))}
+                      <div className="p-2 bg-gray-50 rounded-lg shadow-sm">
+                        <p>
+                          <strong>MRP:</strong> ₹{product.price}<br />
+                          <strong>Selling Price:</strong> ₹{product.sellingPrice}
+                        </p>
+                      </div>
                     </td>
                     <td className="px-6 py-4 border-b text-center">
                       <button
@@ -146,7 +166,9 @@ const ProductsPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500 border-b">No products found.</td>
+                  <td colSpan="5" className="px-6 py-4 text-center text-gray-500 border-b">
+                    No products found.
+                  </td>
                 </tr>
               )}
             </tbody>

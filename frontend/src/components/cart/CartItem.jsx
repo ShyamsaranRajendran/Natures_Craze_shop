@@ -22,9 +22,9 @@ const CartItem = ({
       </button>
       <div className="flex gap-4">
         <div className="w-20 h-20 flex-shrink-0">
-          {cartImg[index] ? (
+          {cartImg ? (
             <img
-              src={cartImg[index]}
+              src={cartImg}
               alt={item.name}
               className="w-full h-full object-cover rounded-md"
               loading="lazy"

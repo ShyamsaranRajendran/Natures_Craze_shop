@@ -32,6 +32,8 @@ import Checkout from "./components/checkout";
 import { Provider } from "react-redux";
 import store from "./redux/store";
 import Chatbot from "./components/Chatbot";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const backendURL = process.env.REACT_APP_BACKEND_URL;
 const NotFound = () => (
   <div className="flex flex-col items-center justify-center h-screen">
@@ -147,13 +149,13 @@ function App() {
           {/* Public Routes */}
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
-          {/* <Route path="signup" element={<SignUp />} /> */}
+          <Route path="signup" element={<SignUp />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
           <Route path="contact" element={<Contact />} />
           <Route path="about" element={<About />} />
           <Route path="products" element={<Products />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/policy/privacy" element={<Privacy />} />
@@ -239,9 +241,11 @@ function App() {
 
           {/* Fallback for unmatched routes */}
           <Route path="*" element={<NotFound />} />
+    
         </Route>
       </Routes>
     </Router>
+          <ToastContainer />
     </Provider>
 
   );

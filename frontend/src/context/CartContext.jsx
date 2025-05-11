@@ -1,7 +1,7 @@
 // src/context/CartContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-
+import { useRef } from 'react';
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
@@ -20,30 +20,46 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('turmericCart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item._id === product._id);
-      
-      if (existingItem) {
-        return prevCart.map(item =>
-          item._id === product._id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        return [...prevCart, { ...product, quantity: 1 }];
-      }
-    });
-    toast.success(`${product.name} has been added to your cart!`, {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-    });
-  };
+const addToCart = (product) => {
+  setCart(prevCart => {
+    const existingItem = prevCart.find(item => item._id === product._id);
+    
+    // Remove the image property before adding the product to the cart
+    const { image, ...productWithoutImage } = product;
+
+    if (existingItem) {
+      return prevCart.map(item =>
+        item._id === product._id
+          ? { 
+              ...item, 
+              quantity: item.quantity + 1, 
+              totalPrice: (item.quantity + 1) * item.price 
+            }
+          : item
+      );
+    } else {
+      return [
+        ...prevCart, 
+        { 
+          ...productWithoutImage,  // Add product without image
+          quantity: 1,
+          totalPrice: product.price,  // Store total price (price * quantity)
+        }
+      ];
+    }
+  });
+
+  // Show success toast notification
+  toast.success(`${product.name} has been added to your cart!`, {
+    position: "top-right",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+  });
+};
 
   const removeFromCart = (productId) => {
     setCart(prevCart => prevCart.filter(item => item._id !== productId));

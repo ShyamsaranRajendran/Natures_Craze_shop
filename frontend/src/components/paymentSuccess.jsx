@@ -56,7 +56,6 @@ const PaymentSuccess = () => {
       };
 
       addText(`Order ID: ${order.ID}`);
-      console.log(order.ID);
       addText(`Customer Name: ${order.username}`);
       addText(`Phone Number: ${order.phoneNumber}`);
       addText(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`);
@@ -69,14 +68,18 @@ const PaymentSuccess = () => {
       y += 10;
 
       doc.setFont("helvetica", "normal");
+      let totalAmount = 0;
+
       order.items.forEach((item, index) => {
-        addText(`${index + 1}. ${item.name} (${item.weight})  ${item.price} x${item.quantity} = ${item.quantity * item.price}`);
+        const itemTotalPrice = item.price * item.quantity;
+        totalAmount += itemTotalPrice;
+        addText(`${index + 1}. ${item.name} (${item.weight})  ₹${item.price} x${item.quantity} = ₹${itemTotalPrice}`);
       });
       y += 10;
 
       // Total Amount
       doc.setFont("helvetica", "bold");
-      doc.text(`Total Amount: ${order.totalAmount}`, 20, y);
+      doc.text(`Total Amount: ₹${totalAmount}`, 20, y);
 
       // Save PDF
       doc.save(`order-invoice-${order.order_id}.pdf`);
@@ -155,7 +158,7 @@ const PaymentSuccess = () => {
             <ul className="list-disc pl-5 space-y-2">
               {orderData.items.map((item, index) => (
                 <li key={index} className="text-gray-600">
-                  {item.name} ({item.weight})  {item.price} x{item.quantity}  = ₹{item.totalPrice}
+                  {item.name} ({item.weight})  ₹{item.price} x{item.quantity}  = ₹{item.totalPrice}
                 </li>
               ))}
             </ul>

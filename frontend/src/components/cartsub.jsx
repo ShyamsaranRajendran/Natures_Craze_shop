@@ -1,11 +1,13 @@
 // src/pages/CartPage.js
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ShoppingCart, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import DefaultImage from '../assets/default-placeholder.png';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const CartPage = () => {
   const {
     cart,
@@ -16,9 +18,57 @@ const CartPage = () => {
     clearCart
   } = useContext(CartContext);
 
+  const [images, setImages] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch images for all products in cart
+  useEffect(() => {
+  const fetchImages = async () => {
+    try {
+      if (cart.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      const productIds = cart.map(item => item._id);
+      const response = await axios.post(`${backendUrl}/prod/images`, { productIds });
+
+      const imageMap = {};
+      response.data.images.forEach(img => {
+        if (img.image) {
+          imageMap[img.id] = img.image; // Already a data URI
+        }
+      });
+      console.log('Fetched images:', imageMap);
+      setImages(imageMap);
+    } catch (error) {
+      console.error('Error fetching images:', error);
+      toast.error('Failed to load product images');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchImages();
+}, [cart]);
+
+
+  // Function to get image for a product
+  const getImage = (productId) => {
+    return images[productId];
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 px-4 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20 px-4">
-       <ToastContainer position="top-right" theme="colored" />
+      <ToastContainer position="top-right" theme="colored" />
       <div className="max-w-6xl mx-auto py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Shopping Cart</h1>
         
@@ -52,11 +102,26 @@ const CartPage = () => {
                   <div key={item._id} className="p-4 border-b last:border-b-0">
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="sm:w-1/4">
-                        <img
-                          src={item.image || DefaultImage}
-                          alt={item.name}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
+                        {getImage(item._id) ? (
+  <img
+    src={getImage(item._id)}
+    alt={item.name}
+    className="w-full h-32 object-contain rounded-lg"
+    onError={(e) => {
+      e.target.src = DefaultImage;
+    }}
+    loading="lazy"
+  />
+) : (
+  <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded-lg">
+    <img
+      src={DefaultImage}
+      alt="Placeholder"
+      className="h-16 opacity-50"
+    />
+  </div>
+)}
+
                       </div>
                       <div className="sm:w-3/4">
                         <div className="flex justify-between">
@@ -76,6 +141,7 @@ const CartPage = () => {
                             <button
                               onClick={() => updateQuantity(item._id, item.quantity - 1)}
                               className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
+                              disabled={item.quantity <= 1}
                             >
                               <ChevronDown className="w-4 h-4" />
                             </button>
@@ -103,7 +169,7 @@ const CartPage = () => {
                 <div className="space-y-3 mb-6">
                   {cart.map(item => (
                     <div key={item._id} className="flex justify-between">
-                      <span>{item.name} × {item.quantity}</span>
+                      <span className="truncate max-w-[180px]">{item.name} × {item.quantity}</span>
                       <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}

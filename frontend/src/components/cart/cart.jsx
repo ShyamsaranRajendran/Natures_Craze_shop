@@ -9,23 +9,24 @@ import CartItem from "./CartItem";
 import OrderSummary from "./OrderSummary";
 import CheckoutModal from "./CheckoutModal";
 
+const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
 const Cart = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [productQuantities, setProductQuantities] = useState({});
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [userDetails, setUserDetails] = useState({
     username: "",
     phoneNumber: "",
-    address: "",
     alternatePhoneNumber: "",
+    address: "",
   });
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [cartImg, setCartImg] = useState([]);
 
-  // Load cart and images on component mount
-  const loadCartAndImages = useCallback(async () => {
+  // Load cart on component mount
+  const loadCart = useCallback(async () => {
     try {
       const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
       setCart(storedCart);
@@ -38,10 +39,6 @@ const Cart = () => {
         };
       });
       setProductQuantities(initialQuantities);
-
-      if (storedCart.length > 0) {
-        await fetchImages(storedCart);
-      }
     } catch (error) {
       console.error("Error loading cart:", error);
       toast.error("Failed to load cart items");
@@ -51,133 +48,10 @@ const Cart = () => {
   }, []);
 
   useEffect(() => {
-    loadCartAndImages();
-  }, [loadCartAndImages]);
-
-  // Fetch product images with retry logic
-  const fetchImages = async (cartItems, retryCount = 3) => {
-    for (let attempt = 0; attempt < retryCount; attempt++) {
-      try {
-        const ids = cartItems.map((item) => item._id);
-        const response = await api.post("/prod/images", { ids });
-
-        const imageMap = response.data.images.reduce((acc, item) => {
-          acc[item.id] = item.image;
-          return acc;
-        }, {});
-
-        setCartImg(cartItems.map((item) => imageMap[item._id] || null));
-        break;
-      } catch (error) {
-        if (attempt === retryCount - 1) {
-          console.error("Error fetching images:", error);
-          toast.error("Failed to load product images");
-        }
-        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
-      }
-    }
-  };
-
-  // Handle pack size change
-  const handlePackSizeChange = useCallback((productId, packSize) => {
-    setProductQuantities((prev) => ({
-      ...prev,
-      [productId]: { ...prev[productId], packSize },
-    }));
-  }, []);
-
-  // Handle adding a product to the cart
-  const handleAddToCart = useCallback(
-    (productId) => {
-      const productDetails = productQuantities[productId];
-      const product = cart.find((item) => item._id === productId);
-
-      if (!productDetails?.packSize) {
-        toast.warning("Please select a pack size");
-        return;
-      }
-
-      const price = product.prices.find(
-        (p) => p.packSize === productDetails.packSize
-      )?.price;
-      if (!price) {
-        toast.error("Price not found for selected pack size");
-        return;
-      }
-
-      setCart((prevCart) => {
-        const updatedCart = prevCart.map((item) => {
-          if (item._id === productId) {
-            const currentQuantity = item.quantities?.[productDetails.packSize] || 0;
-            return {
-              ...item,
-              quantities: {
-                ...item.quantities,
-                [productDetails.packSize]: currentQuantity + (productDetails.quantity || 1),
-              },
-            };
-          }
-          return item;
-        });
-
-        localStorage.setItem("cart", JSON.stringify(updatedCart));
-        return updatedCart;
-      });
-
-      toast.success(`${product.name} (${productDetails.packSize}) added to cart`);
-    },
-    [cart, productQuantities]
-  );
-
-  // Handle updating product quantity
-  const handleUpdateQuantity = useCallback((productId, packSize, change) => {
-    setCart((prevCart) => {
-      const updatedCart = prevCart
-        .map((item) => {
-          if (item._id === productId) {
-            const currentQty = item.quantities[packSize] || 0;
-            const newQty = Math.max(0, currentQty + change);
-
-            const updatedQuantities = { ...item.quantities };
-            if (newQty === 0) {
-              delete updatedQuantities[packSize];
-            } else {
-              updatedQuantities[packSize] = newQty;
-            }
-
-            return { ...item, quantities: updatedQuantities };
-          }
-          return item;
-        })
-        .filter((item) => Object.keys(item.quantities || {}).length > 0);
-
-      localStorage.setItem("cart", JSON.stringify(updatedCart));
-      return updatedCart;
-    });
-  }, []);
-
-  // Handle removing an item from the cart
-  const handleRemoveItem = useCallback((productId) => {
-    setCart((prevCart) => {
-      const updatedCart = prevCart.filter((item) => item._id !== productId);
-      localStorage.setItem("cart", JSON.stringify(updatedCart));
-      return updatedCart;
-    });
-    toast.success("Item removed from cart");
-  }, []);
+    loadCart();
+  }, [loadCart]);
 
   // Calculate the total price of the cart
-//   const calculateTotal = useCallback(() => {
-//     return cart.reduce((total, item) => {
-//       return (
-//         total +
-//         Object.entries(item.quantities || {}).reduce((sum, [volume, qty]) => {
-//           const price = item.prices.find((p) => p.packSize === volume)?.price || 0;
-//           return sum + price * qty;
-//         }, 0)
-//       );
-//     }, 0);
-//   }, [cart]);
   const calculateTotal = useCallback(() => {
     return cart.reduce((total, item) => {
       return (
@@ -347,7 +221,7 @@ const Cart = () => {
     setUserDetails((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  return (
+ return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white py-12 px-4 lg:px-8 mt-10">
       <ToastContainer position="top-right" theme="colored" />
       {isLoading ? (
@@ -376,7 +250,6 @@ const Cart = () => {
                   key={item._id}
                   item={item}
                   index={index}
-                  cartImg={cartImg}
                   productQuantities={productQuantities}
                   handlePackSizeChange={handlePackSizeChange}
                   handleAddToCart={handleAddToCart}

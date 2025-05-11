@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Product = require("../../models/product");
+const Product = require('../../models/Product'); // adjust the path if necessary
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const multer = require("multer");
@@ -19,60 +19,81 @@ const upload = multer({
   },
 });
 
-// Add Product Route
 router.post("/add", upload.single("image"), async (req, res) => {
   try {
-    console.log("Request Body:", req.body);
-    console.log("Uploaded File:", req.file);
+    const {
+      name,
+      brand,
+      description,
+      category,
+      subCategory,
+      type,
+      quantity,
+      price,
+      sellingPrice,
+      discount,
+      organic,
+      origin,
+      rating,
+      inStock,
+      seller,
+      count
+    } = req.body;
 
-    const { name,description, prices } = req.body;
-    const image = req.file;
-
-    // Validate required fields
-    if (!name || !prices || !image) {
-      return res.status(400).json({ message: "All fields are required." });
+    // Required fields validation
+    if (!name || !brand || !description || !category || !subCategory || 
+        !quantity || !price || !sellingPrice || !req.file) {
+      return res.status(400).json({ message: "All required fields must be provided." });
     }
 
-    // Parse prices if sent as a JSON string
-    let parsedPrices;
-    try {
-      parsedPrices = JSON.parse(prices); // Parse the prices field if it's sent as JSON
-    } catch (err) {
-      return res.status(400).json({ message: "Invalid prices format. Ensure it's a valid JSON array." });
-    }
-
-    // Validate the parsed prices
-    if (!Array.isArray(parsedPrices) || parsedPrices.length === 0) {
-      return res.status(400).json({ message: "Prices must be a non-empty array." });
-    }
-
-    for (const priceObj of parsedPrices) {
-      if (!priceObj.packSize || !priceObj.price) {
-        return res.status(400).json({ message: "Each price must include 'packSize' and 'price' fields." });
-      }
-    }
-
-    // Create a new product instance
     const newProduct = new Product({
       name,
+      brand,
       description,
-      prices: parsedPrices,
-      image: image.buffer,
+      category,
+      subCategory,
+      type: type || undefined, // Make optional
+      weight:quantity,
+      price: parseFloat(price),
+      sellingPrice: parseFloat(sellingPrice),
+      discount: parseInt(discount) || 0,
+      organic: organic === 'true',
+      origin: origin || undefined,
+      rating: parseFloat(rating) || 0,
+      inStock: inStock !== 'false', // Default to true unless explicitly false
+      seller: seller || undefined,
+      count: parseInt(count) || 1,
+      image: {
+        data: req.file.buffer,
+        contentType: req.file.mimetype
+      },
+      addedAt: new Date()
     });
 
-    // Save the product to the database
     await newProduct.save();
 
-    res.status(201).json({ message: "Product added successfully!", product: newProduct });
+    res.status(201).json({ 
+      message: "Product added successfully!", 
+      product: {
+        _id: newProduct._id,
+        name: newProduct.name,
+        brand: newProduct.brand,
+        price: newProduct.price
+      }
+    });
   } catch (error) {
-    console.error("Error adding product:", error.message);
-    res.status(500).json({ message: "Failed to add product.", error: error.message });
+    console.error("Error adding product:", error);
+    res.status(500).json({ 
+      message: "Failed to add product.", 
+      error: error.message 
+    });
   }
 });
 
+
 router.post("/images", async (req, res) => {
   try {
-    const { ids } = req.body;
+    const ids  = req.body.productIds ;
 
     // Validate input: Check if IDs are provided and in the correct format
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -89,16 +110,22 @@ router.post("/images", async (req, res) => {
 
     // Map images with their corresponding IDs
     const images = products.map((product) => {
-      const imageBuffer = product.image; // Assuming `image` is a Buffer in the Product schema
-      const imageBase64 = imageBuffer
-        ? `data:image/jpeg;base64,${imageBuffer.toString("base64")}` // Convert buffer to base64
-        : null; // If no image, return null or a default placeholder URL
+  if (product.image && product.image.data) {
+    const contentType = product.image.contentType || 'image/jpeg'; // fallback
+    const base64 = product.image.data.toString("base64");
 
-      return {
-        id: product._id, // Include the product ID
-        image: imageBase64, // Include the base64-encoded image or null
-      };
-    });
+    return {
+      id: product._id,
+      image: `data:${contentType};base64,${base64}`,
+    };
+  }
+
+  return {
+    id: product._id,
+    image: null,
+  };
+});
+
 
     // Send the mapped images and IDs to the frontend
     res.status(200).json({ images });
@@ -118,6 +145,7 @@ const formatProduct = (product) => {
 };
 
 // Route to fetch all products
+// routes/product.js or similar
 router.get("/all", async (req, res) => {
   try {
     console.log("Fetching all products...");
@@ -128,9 +156,60 @@ router.get("/all", async (req, res) => {
       return res.status(404).json({ message: "No products found" });
     }
 
+    // Helper function to format each product
+    const formatProduct = (product) => {
+      const formatted = product.toObject(); // convert Mongoose doc to plain object
+
+      if (formatted.image?.data && formatted.image?.contentType) {
+        formatted.image = {
+          contentType: formatted.image.contentType,
+          base64: formatted.image.data.toString("base64"),
+        };
+      }
+
+      return formatted;
+    };
+
     const formattedProducts = products.map(formatProduct);
 
-    console.log(`Found ${formattedProducts.length} products`);
+    res.status(200).json(formattedProducts);
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/all/Tableformat", async (req, res) => {
+  try {
+    console.log("Fetching all products...");
+
+   const products = await Product.find().select("-image");
+
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: "No products found" });
+    }
+
+    // Helper function to format each product
+    const formatProduct = (product) => {
+      const formatted = product.toObject(); // convert Mongoose doc to plain object
+
+      if (formatted.image?.data && formatted.image?.contentType) {
+        formatted.image = {
+          contentType: formatted.image.contentType,
+          base64: formatted.image.data.toString("base64"),
+        };
+      }
+
+      return formatted;
+    };
+
+    const formattedProducts = products.map(formatProduct);
+    console.log("Formatted products:", formattedProducts);
+
+    // console.log(`Found ${formattedProducts.length} products`);
+    console.log("Products fetched successfully");
+    // Send the formatted products to the frontend
+
     res.status(200).json(formattedProducts);
   } catch (err) {
     console.error("Error fetching products:", err);
