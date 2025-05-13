@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const user = require('./routes/user');
 const prod = require('./routes/users/products');
-const order = require('./routes/users/order');
+const order = require('./routes/users/RoutesOrders');
 const chat = require('./routes/users/chatbot');
 const paymentsRouter = require('./routes/users/payments');  
 app.use('/orders', order);

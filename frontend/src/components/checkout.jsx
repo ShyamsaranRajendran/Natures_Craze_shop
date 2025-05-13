@@ -97,27 +97,43 @@ const CheckoutPage = () => {
       
       // Prepare order data that matches backend expectations
       const orderData = {
-        customer: {
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          phone: formData.phone,
-          address: {
-            street: formData.address,
-            city: formData.city,
-            state: formData.state,
-            zipCode: formData.zipCode
-          }
-        },
-        items: cart.map(item => ({
-          productId: item._id,
-          name: item.name,
-          weight: item.weight,
-          quantity: item.quantity,
-          price: item.price,
-          image: item.image
-        })),
-        paymentMethod: formData.paymentMethod
-      };
+  items: cart, // ✅ must be an array
+  username: `${formData.firstName} ${formData.lastName}`.trim(), // ✅ string
+  phoneNumber: formData.phone, // ✅ string
+  alternatePhoneNumber: formData.alternatePhone || '',
+  address: {
+    street: formData.address,
+    city: formData.city,
+    state: formData.state,
+    zipCode: formData.zipCode,
+  }, // ✅ must be a nested object
+  userId: null,
+  paymentMethod: formData.paymentMethod,
+  amount: cartTotal,
+};
+
+      // const orderData = {
+      //   customer: {
+      //     username: `${formData.firstName} ${formData.lastName}`,
+      //     email: formData.email,
+      //     phone: formData.phone,
+      //     address: {
+      //       street: formData.address,
+      //       city: formData.city,
+      //       state: formData.state,
+      //       zipCode: formData.zipCode
+      //     }
+      //   },
+      //   items: cart.map(item => ({
+      //     productId: item._id,
+      //     name: item.name,
+      //     weight: item.weight,
+      //     quantity: item.quantity,
+      //     price: item.price,
+      //     image: item.image
+      //   })),
+      //   paymentMethod: formData.paymentMethod
+      // };
   
       console.log('Sending to backend:', orderData);
   
@@ -134,18 +150,18 @@ const CheckoutPage = () => {
       // Initialize Razorpay payment
       const options = {
         key: "rzp_test_814EkXmD14BWDD"||process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: amount.toString(),
+        amount: amount,
         currency: 'INR',
-        name: 'Your Store Name',
+        name: 'Natures Craze',
         description: 'Order Payment',
         order_id: razorpayOrderId,
         handler: async function(response) {
           try {
             // Verify payment with backend
-            const verification = await axios.post(`${backendURL}/orders/verify`, {
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature,
+            const verification = await axios.post(`http://localhost:5000/orders/verify001`, {
+              razorpayPaymentId: response.data.razorpay.razorpay_payment_id,
+              razorpayOrderId: response.data.razorpay.razorpay_order_id,
+              razorpaySignature: response.data.razorpay.razorpay_signature,
               orderId: orderId
             });
   
@@ -169,9 +185,9 @@ const CheckoutPage = () => {
           }
         },
         prefill: {
-          name: orderData.customer.name,
-          email: orderData.customer.email,
-          contact: orderData.customer.phone
+          name: orderData.username,
+          email: orderData.email,
+          contact: orderData.phoneNumber
         },
         theme: {
           color: '#F59E0B'
@@ -188,49 +204,61 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!formData.firstName || !formData.lastName || !formData.email || 
-        !formData.phone || !formData.address || !formData.city || 
-        !formData.state || !formData.zipCode) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Handle different payment methods
-    if (formData.paymentMethod === 'cod') {
-      try {
-        setIsProcessing(true);
-        // Create COD order on backend
-        const orderData = {
-          amount: cartTotal,
-          paymentMethod: 'cod',
-          products: cart,
-          shippingDetails: formData
-        };
-        console.log('Order Data:', orderData);
-        await axios.post(`${backendURL}/orders/create`, orderData);
-        toast.success('Order placed successfully!');
-        clearCart();
-        navigate('/paymentSuccess', {
-          state: {
-            paymentMethod: 'cod',
-            amount: cartTotal,
-            products: cart
-          }
-        });
-      } catch (error) {
-        console.error('Order creation error:', error);
-        toast.error('Failed to place order');
-      } finally {
-        setIsProcessing(false);
-      }
-    } else {
-      await handlePayment();
-    }
+  // Validate required fields
+  if (
+  !formData.firstName || !formData.lastName || !formData.phone ||
+  !formData.address || !formData.city || !formData.state || !formData.zipCode
+) {
+  toast.error('Username, phone number, and address are required.');
+  return;
+}
+
+
+  // Create the order payload
+  const orderData = {
+    items: cart,
+    username: `${formData.firstName} ${formData.lastName}`,
+    phoneNumber: formData.phone,
+    alternatePhoneNumber: formData.alternatePhone || '',
+    address: {
+      street: formData.address,
+      city: formData.city,
+      state: formData.state,
+      zipCode: formData.zipCode,
+    },
+    userId: null, // optional depending on auth
+    paymentMethod: formData.paymentMethod,
+    amount: cartTotal,
   };
+
+  if (formData.paymentMethod === 'cod') {
+    try {
+      setIsProcessing(true);
+      console.log('Order Data:', orderData);
+      await axios.post(`${backendURL}/orders/create`, orderData);
+      toast.success('Order placed successfully!');
+      clearCart();
+      navigate('/paymentSuccess', {
+        state: {
+          paymentMethod: 'cod',
+          amount: cartTotal,
+          products: cart,
+        },
+      });
+    } catch (error) {
+      console.error('Order creation error:', error);
+      toast.error('Failed to place order');
+    } finally {
+      setIsProcessing(false);
+    }
+  } else {
+    await handlePayment();
+  }
+};
+
 
   if (cart.length === 0) {
     return (

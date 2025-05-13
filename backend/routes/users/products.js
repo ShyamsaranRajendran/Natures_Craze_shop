@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Product = require('../../models/Product'); // adjust the path if necessary
+const Product = require('../../models/product'); // adjust the path if necessary
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const multer = require("multer");

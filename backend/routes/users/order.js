@@ -3,7 +3,7 @@ const Razorpay = require("razorpay");
 const Order = require("../../models/order");
 const PaidOrder = require("../../models/paidOrders");
 const UnPaidOrder = require("../../models/unpaidOrders");
-const Product = require("../../models/Product");
+const Product = require("../../models/product");
 const router = express.Router();
 const crypto = require("crypto");
 
@@ -258,6 +258,35 @@ router.get("/all", async (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       message: "Error fetching orders",
+      error: error.message 
+    });
+  }
+});
+
+router.get("charts", async (req, res) => {
+  try {
+    const orders = await Order.find();
+    const orderCount = orders.length;
+
+    // Calculate total revenue
+    const totalRevenue = orders.reduce((total, order) => {
+      return total + order.totalAmount;
+    }, 0);
+
+    // Calculate total number of items sold
+    const totalItemsSold = orders.reduce((total, order) => {
+      return total + order.items.reduce((sum, item) => sum + item.quantity, 0);
+    }, 0);
+
+    res.status(200).json({
+      orderCount,
+      totalRevenue,
+      totalItemsSold,
+    });
+  } catch (error) {
+    console.error("Error fetching charts data:", error);
+    res.status(500).json({ 
+      message: "Error fetching charts data",
       error: error.message 
     });
   }
