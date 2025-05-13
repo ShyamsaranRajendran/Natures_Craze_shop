@@ -1,11 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { ShoppingCart, ChevronDown, ChevronUp, X, CreditCard, Truck, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { ToastContainer, toast } from 'react-toastify';
 import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
-
 const backendURL = process.env.REACT_APP_BACKEND_URL;
 
 const CheckoutPage = () => {
@@ -17,9 +16,46 @@ const CheckoutPage = () => {
     cartItemCount,
     clearCart
   } = useContext(CartContext);
-
+ const [images, setImages] = useState({});
+ const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        if (cart.length === 0) {
+          setIsLoading(false);
+          return;
+        }
+  
+        const productIds = cart.map(item => item._id);
+        const response = await axios.post(`${backendURL}/prod/images`, { productIds });
+  
+        const imageMap = {};
+        response.data.images.forEach(img => {
+          if (img.image) {
+            imageMap[img.id] = img.image; // Already a data URI
+          }
+        });
+        console.log('Fetched images:', imageMap);
+        setImages(imageMap);
+      } catch (error) {
+        console.error('Error fetching images:', error);
+        toast.error('Failed to load product images');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchImages();
+  }, [cart]);
+  
+  
+    // Function to get image for a product
+    const getImage = (productId) => {
+      return images[productId];
+    };
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -192,7 +228,6 @@ const CheckoutPage = () => {
         setIsProcessing(false);
       }
     } else {
-      // Handle online payment
       await handlePayment();
     }
   };
@@ -406,7 +441,7 @@ const CheckoutPage = () => {
                     <div className="mr-4">
                       <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
                         <img 
-                          src={item.image} 
+                          src={getImage(item._id) || 'https://via.placeholder.com/150'} 
                           alt={item.name} 
                           className="w-full h-full object-cover"
                         />

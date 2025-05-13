@@ -223,7 +223,7 @@ router.get("/:id", async (req, res) => {
     const { id } = req.params;
 
     console.log(`Fetching product with ID: ${id}`);
-    const product = await Product.findById({id:id});
+    const product = await Product.findById(id); // Fixed: Removed the unnecessary object syntax
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -235,11 +235,12 @@ router.get("/:id", async (req, res) => {
       _id: { $ne: id },
     }).limit(5);
 
-    const formattedProduct = formatProduct(product);
-    const formattedRecommended = recommendedProducts.map(formatProduct);
-
-    console.log(`Product found: ${formattedProduct.name}`);
-    res.status(200).json({ product: formattedProduct, recommendedProducts: formattedRecommended });
+    // No need for formatProduct if you're sending the raw product data
+    console.log(`Product found: ${product.name}`);
+    res.status(200).json({ 
+      product,  // Changed from formattedProduct to just product
+      recommendedProducts 
+    });
   } catch (err) {
     console.error("Error fetching product:", err);
 
@@ -251,10 +252,28 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update Product Route
-router.put('/update/:id', upload.single('image'), async (req, res) => {
+// Update Product Route - changed path to match frontend (just '/:id')
+router.put('/:id', upload.single('image'), async (req, res) => {
   const { id } = req.params;
-  const { name, desc, prices } = req.body;
+  const { 
+    name, 
+    brand,
+    description, 
+    category,
+    subCategory,
+    type,
+    quantity,
+    price,
+    sellingPrice,
+    discount,
+    organic,
+    origin,
+    rating,
+    inStock,
+    seller,
+    count
+  } = req.body;
+  
   const image = req.file;
 
   try {
@@ -264,31 +283,46 @@ router.put('/update/:id', upload.single('image'), async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Update product fields
+    // Update all product fields from the request
     product.name = name || product.name;
-    product.description = desc || product.description;
+    product.brand = brand || product.brand;
+    product.description = description || product.description;
+    product.category = category || product.category;
+    product.subCategory = subCategory || product.subCategory;
+    product.type = type || product.type;
+    product.weight = quantity || product.quantity;
+    product.price = price || product.price;
+    product.sellingPrice = sellingPrice || product.sellingPrice;
+    product.discount = discount !== undefined ? discount : product.discount;
+    product.organic = organic !== undefined ? organic : product.organic;
+    product.origin = origin || product.origin;
+    product.rating = rating || product.rating;
+    product.inStock = inStock !== undefined ? inStock : product.inStock;
+    product.seller = seller || product.seller;
+    product.count = count || product.count;
 
+    // Handle image update if new image was uploaded
     if (image) {
-      product.image = image.buffer
-    }
-
-    // Update prices array
-    if (prices && Array.isArray(prices)) {
-      product.prices = prices;
+      product.image = {
+        data: image.buffer,
+        contentType: image.mimetype
+      };
     }
 
     await product.save();
 
     res.status(200).json({
       message: 'Product updated successfully',
-      product: product,
+      product, // Return the updated product
     });
   } catch (err) {
     console.error('Error updating product:', err);
-    res.status(500).json({ message: 'Error updating product' });
+    res.status(500).json({ 
+      message: 'Error updating product',
+      error: err.message 
+    });
   }
 });
-
 // Delete Product Route
 router.delete("/delete/:id", async (req, res) => {
   const { id } = req.params;
